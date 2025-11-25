@@ -3,7 +3,6 @@ import iconMap from "./iconMap";
 import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react'
 import { ChevronDownIcon, XMarkIcon } from '@heroicons/react/20/solid'
 import { SketchPicker } from "react-color";
-
 const SectionSchemaElements = ({ droppedElements, onDrop, onDelete, resetTrigger, elementsData, setElementsData }) => {
   const [collapse, setCollapse]= useState(false)
   const [nestedCollapse, setNestedCollapse] = useState(false)
@@ -11,10 +10,8 @@ const SectionSchemaElements = ({ droppedElements, onDrop, onDelete, resetTrigger
   const [nestedFields, setNestedFields] = useState(elementsData.nestedFields || {});
   const [expandedNested, setExpandedNested] = useState({});
   const [fieldValues, setFieldValues] = useState(elementsData.fieldValues || {});
-  // const [colorPalette, setColorPalette] = useState(false);
   const [colorPalette, setColorPalette] = useState(null);
   const [colorRgba, setColorRgba] = useState(null);
-
   // Update elements data when field values change
   useEffect(() => {
     if (setElementsData) {
@@ -25,7 +22,6 @@ const SectionSchemaElements = ({ droppedElements, onDrop, onDelete, resetTrigger
       });
     }
   }, [droppedElements, nestedFields, fieldValues, setElementsData])
-
   // Reset all fields when resetTrigger changes
   useEffect(() => {
     setElementsOpen({});
@@ -34,7 +30,6 @@ const SectionSchemaElements = ({ droppedElements, onDrop, onDelete, resetTrigger
     setFieldValues({});
     setColorPalette(false);
     setColorRgba(false);
-    
     // Reset elements data in context
     if (setElementsData) {
       setElementsData({
@@ -44,14 +39,14 @@ const SectionSchemaElements = ({ droppedElements, onDrop, onDelete, resetTrigger
       });
     }
   }, [resetTrigger, setElementsData])
-
 // Initialize field values when elements are added
 useEffect(() => {
   const newValues = {...fieldValues};
-  
+  let hasChanges = false;  
   // Handle main elements
   droppedElements.forEach((el, index) => {
     if (!newValues[index]) {
+      hasChanges = true;
       newValues[index] = {
         label: '',
         id: '',
@@ -64,12 +59,12 @@ useEffect(() => {
       };
     }
   });
-  
   // Handle nested elements
   Object.keys(nestedFields).forEach(parentIndex => {
     nestedFields[parentIndex].forEach((el, nestedIndex) => {
       const key = `${parentIndex}-${nestedIndex}`;
       if (!newValues[key]) {
+        hasChanges = true;
         newValues[key] = {
           label: '',
           id: '',
@@ -83,100 +78,82 @@ useEffect(() => {
       }
     });
   });
-  
-//  setFieldValues(newValues);
-}, [droppedElements, nestedFields]);
+  // Only update if there are changes to avoid infinite loops
+  if (hasChanges) {
+    setFieldValues(newValues);
+  }
+}, [droppedElements, nestedFields, fieldValues]);
 
-  const addOption = useCallback((fieldIndex, isRadio = false) => {
+const addOption = useCallback((fieldIndex, isRadio = false) => {
   setFieldValues(prev => {
-    const newValues = {...prev};
-    
-    // Ensure the field exists in the state
+    const newValues = { ...prev };    
+    // Create field if it doesn't exist
     if (!newValues[fieldIndex]) {
       newValues[fieldIndex] = {};
     }
-    
+    // Create the new option
     const newOption = isRadio 
       ? { label: '', value: '' } 
-      : { label: '', value: '', group: '' };
-    
-    const currentOptions = newValues[fieldIndex].options 
+      : { label: '', value: '', group: '' }; 
+    // Get current options or initialize empty array
+    const currentOptions = Array.isArray(newValues[fieldIndex].options) 
       ? [...newValues[fieldIndex].options] 
-      : [];
-    
+      : []; 
+    // Add only one new option
     newValues[fieldIndex] = {
       ...newValues[fieldIndex],
       options: [...currentOptions, newOption]
-    };
-    
+    };  
     return newValues;
   });
 }, []);
-
-  // const removeOption = useCallback((fieldIndex, optionIndex) => {
-  //   setFieldValues(prev => {
-  //     const newValues = JSON.parse(JSON.stringify(prev));
-      
-  //     if (newValues[fieldIndex]?.options?.length) {
-  //       newValues[fieldIndex].options = newValues[fieldIndex].options
-  //         .filter((_, idx) => idx !== optionIndex);
-        
-  //       if (newValues[fieldIndex].options.length === 0) {
-  //         newValues[fieldIndex].options = [];
-  //       }
-  //     }
-      
-  //     return newValues;
-  //   });
-  // }, []);
-
-  const removeOption = useCallback((fieldIndex, optionIndex) => {
+const removeOption = useCallback((fieldIndex, optionIndex) => {
   setFieldValues(prev => {
     const newValues = JSON.parse(JSON.stringify(prev));
-    
-    if (newValues[fieldIndex]?.options?.length) {
-      newValues[fieldIndex].options = newValues[fieldIndex].options
-        .filter((_, idx) => idx !== optionIndex);
-      
-      // Clear default value if it was the removed option
+    // Add proper existence checks
+    if (newValues[fieldIndex] && newValues[fieldIndex].options && newValues[fieldIndex].options.length) {
       const removedOptionLabel = newValues[fieldIndex].options[optionIndex]?.label;
+      newValues[fieldIndex].options = newValues[fieldIndex].options
+        .filter((_, idx) => idx !== optionIndex);      
+      // Clear default value if it was the removed option
       if (newValues[fieldIndex].defaultValue === removedOptionLabel) {
         newValues[fieldIndex].defaultValue = "";
-      }
-      
+      }      
       if (newValues[fieldIndex].options.length === 0) {
         newValues[fieldIndex].options = [];
       }
-    }
-    
+    }    
     return newValues;
   });
 }, []);
-
 const handleOptionChange = (fieldIndex, optionIndex, key, value, fieldType) => {
-  setFieldValues(prev => {
-    const newValues = {...prev};
-    
+  setFieldValues(prev => { 
+    const newValues = {...prev};   
     // Ensure the field exists
     if (!newValues[fieldIndex]) {
       newValues[fieldIndex] = {};
     }
-    
-    // Ensure options array exists
-    if (!newValues[fieldIndex].options) {
-      newValues[fieldIndex].options = fieldType === 'radio' 
-        ? [{ label: '', value: '' }] 
-        : [{ label: '', value: '', group: '' }];
-    }
-    
+    // Ensure options array exists and is an array
+    if (!Array.isArray(newValues[fieldIndex].options)) {
+      newValues[fieldIndex].options = [];
+    }        
+    // If we're trying to update an option that doesn't exist, create it
+    if (!newValues[fieldIndex].options[optionIndex]) {
+      const newOption = fieldType === 'radio' 
+        ? { label: '', value: '' } 
+        : { label: '', value: '', group: '' };  
+      // Ensure we have enough slots in the array
+      while (newValues[fieldIndex].options.length <= optionIndex) {
+        newValues[fieldIndex].options.push({...newOption});
+      }
+    }    
+    // Update the specific option
     newValues[fieldIndex].options = newValues[fieldIndex].options.map((opt, idx) => 
       idx === optionIndex ? { ...opt, [key]: value } : opt
-    );
-    
+    );    
     return newValues;
   });
 };
-
   const handleDrop = (e, targetIndex = null) => {
   e.preventDefault();
   e.stopPropagation(); 
@@ -185,9 +162,8 @@ const handleOptionChange = (fieldIndex, optionIndex, key, value, fieldType) => {
   const element = JSON.parse(data);
   const newElement = {
     ...element,
-    icon: iconMap[element.iconType] || iconMap['block']
-  };
-  
+    icon: iconMap[element.iconType] || iconMap['block'] 
+  };  
   if (targetIndex !== null && element.title.toLowerCase() !== 'block') {
     setNestedFields(prev => ({
       ...prev,
@@ -205,6 +181,7 @@ const handleOptionChange = (fieldIndex, optionIndex, key, value, fieldType) => {
         type: '',
         options: ['select', 'radio'].includes(element.title.toLowerCase()) 
           ? [{ label: '', value: '', group: '' }]
+          //? [{ label: '', value: '', ...(element.title.toLowerCase() !== 'radio' && { group: '' }) }]
           : undefined,
         ...prevValues[nestedKey]
       }
@@ -213,13 +190,11 @@ const handleOptionChange = (fieldIndex, optionIndex, key, value, fieldType) => {
     onDrop(newElement);
   }
 };
-
   const handleDragOver = (e) => {
     e.preventDefault();
     e.stopPropagation();
     e.dataTransfer.dropEffect = 'copy';
   };
-
   const toggleElement = (index, isNested = false, parentIndex = null) => {
     if (isNested) {
       setExpandedNested(prev => ({
@@ -238,7 +213,6 @@ const handleOptionChange = (fieldIndex, optionIndex, key, value, fieldType) => {
       setCollapse(!collapse)      
     }
   };
-
 const handleDelete = (index, isNested = false, parentIndex = null) => {
   if (isNested) {
     // Delete nested element
@@ -246,8 +220,7 @@ const handleDelete = (index, isNested = false, parentIndex = null) => {
       const updatedNestedFields = {...prev};
       updatedNestedFields[parentIndex] = prev[parentIndex].filter((_, i) => i !== index);
       return updatedNestedFields;
-    });
-    
+    });  
     // Clean up field values for the nested element
     setFieldValues(prev => {
       const newValues = {...prev};
@@ -257,8 +230,7 @@ const handleDelete = (index, isNested = false, parentIndex = null) => {
     });
   } else {
     // Delete main element
-    onDelete(index);
-    
+    onDelete(index);  
     // Clean up all data associated with the deleted element
     setFieldValues(prev => {
       const newValues = {...prev};    
@@ -269,8 +241,7 @@ const handleDelete = (index, isNested = false, parentIndex = null) => {
         if (key.startsWith(`${index}-`)) {
           delete newValues[key];
         }
-      });
-      
+      });      
       // Reindex only the main elements that come after the deleted one
       Object.keys(prev).forEach(key => {
         // Handle main element keys (numeric)
@@ -292,8 +263,7 @@ const handleDelete = (index, isNested = false, parentIndex = null) => {
         }
       });      
       return newValues;
-    });
-    
+    });    
     // Clean up and reindex nested fields
     setNestedFields(prev => {
       const newNested = {};      
@@ -310,8 +280,7 @@ const handleDelete = (index, isNested = false, parentIndex = null) => {
         }
       });      
       return newNested;
-    });
-    
+    });    
     // Clean up and reindex expanded states
     setElementsOpen(prev => {
       const newOpen = {};      
@@ -328,8 +297,7 @@ const handleDelete = (index, isNested = false, parentIndex = null) => {
         }
       });      
       return newOpen;
-    });
-    
+    }); 
     // Clean up and reindex expanded nested states
     setExpandedNested(prev => {
       const newExpanded = {};      
@@ -349,7 +317,6 @@ const handleDelete = (index, isNested = false, parentIndex = null) => {
     });
   }
 };
-
   const handleCopy = (index, isNested = false, parentIndex = null) => {
   if (isNested) {
     // Copy nested element with its field values
@@ -357,8 +324,7 @@ const handleDelete = (index, isNested = false, parentIndex = null) => {
       const newNestedFields = {...prev};
       const originalElement = prev[parentIndex][index];
       const newElement = {...originalElement};      
-      newNestedFields[parentIndex] = [...prev[parentIndex], newElement];
-      
+      newNestedFields[parentIndex] = [...prev[parentIndex], newElement];     
       // Copy field values for the nested element
       setFieldValues(prevValues => {
         const originalKey = `${parentIndex}-${index}`;
@@ -422,7 +388,6 @@ const handleDelete = (index, isNested = false, parentIndex = null) => {
       return newValues;
     });
   };
-
    const toggleColorPicker = (fieldIndex, pickerType) => {
     const pickerKey = `${fieldIndex}-${pickerType}`;
     if (colorPalette === pickerKey) {
@@ -430,7 +395,6 @@ const handleDelete = (index, isNested = false, parentIndex = null) => {
     } else {
       setColorPalette(pickerKey);
     }
-
     if (colorRgba === pickerKey) {
       setColorRgba(null);
     } else {
@@ -442,7 +406,6 @@ const handleDelete = (index, isNested = false, parentIndex = null) => {
     const type = element.title.toLowerCase();
     const isBlock = type === 'block';
     const values = fieldValues[index] || {};
-
     // Common fields for non-block elements
     const commonFields = !isBlock ? (
       <>
@@ -492,7 +455,6 @@ const handleDelete = (index, isNested = false, parentIndex = null) => {
         </div>
       </>
     );
-
     // Info field (appears last for all elements except blocks)
     const infoField = !isBlock && (
       <div className="mb-4">
@@ -505,11 +467,11 @@ const handleDelete = (index, isNested = false, parentIndex = null) => {
         />
       </div>
     );
-
     // Type-specific fields
     let typeSpecificFields = null;
-    switch(type) {
-      case 'text':
+    switch(type) { 
+
+        case 'text':
       case 'textarea':
       case 'number':
         typeSpecificFields = (
@@ -538,316 +500,7 @@ const handleDelete = (index, isNested = false, parentIndex = null) => {
         );
         break;
 
-      // case 'rich text':
-      // case 'inline richtext': {
-      //   const isInlineRichText = type === 'inline richtext';
-        
-      //   const handleFormat = (format, event) => {
-      //     event.preventDefault();
-      //     const editor = document.getElementById(`richtext-${index}`);
-      //     if (!editor) return;
-
-      //     editor.focus();
-          
-      //     switch(format) {
-      //       case 'bold':
-      //         document.execCommand('bold', false, null);
-      //         break;
-      //       case 'italic':
-      //         document.execCommand('italic', false, null);
-      //         break;
-      //       case 'underline':
-      //         document.execCommand('underline', false, null);
-      //         break;
-      //       case 'bullet':{
-      //         const selection = window.getSelection();
-      //         if (!selection.rangeCount) return;
-              
-      //         const range = selection.getRangeAt(0);
-      //         const container = range.commonAncestorContainer;
-              
-      //         const listItem = container.nodeType === 3 ? container.parentNode : container;
-      //         if (listItem.nodeName === 'LI') {
-      //           document.execCommand('insertHTML', false, '<li>');
-      //         } else {
-      //           document.execCommand('insertHTML', false, '<ul><li></li></ul>');
-                
-      //           const newRange = document.createRange();
-      //           const newContainer = document.querySelector('li:last-child');
-      //           newRange.setStart(newContainer, 0);
-      //           newRange.setEnd(newContainer, 0);
-      //           selection.removeAllRanges();
-      //           selection.addRange(newRange);
-      //         }}
-      //         break;
-      //       case 'url': {
-      //         const url = prompt('Enter URL:', 'https://');
-      //         if (url) {
-      //           document.execCommand('createLink', false, url);
-      //         }
-      //         break;
-      //       }
-      //       default:
-      //         break;
-      //     }
-
-      //     handleFieldChange(index, 'defaultValue', editor.innerHTML);
-      //   };
-
-      //   typeSpecificFields = (  
-      //     <>
-      //     <div className="bg-stone-700 border-gray-400 border-1 mb-4">
-      //       <div className="flex flex-wrap items-center p-1 border-b border-gray-400">
-      //         <div className="flex space-x-0">
-      //           <button 
-      //             onClick={(e) => handleFormat('bold', e)}
-      //             className="h-8 w-8 flex items-center justify-center rounded hover:bg-gray-600 font-bold cursor-pointer"
-      //             title="Bold"
-      //           >
-      //             B
-      //           </button>
-                
-      //           <button 
-      //             onClick={(e) => handleFormat('italic', e)}
-      //             className="h-8 w-8 flex items-center justify-center rounded hover:bg-gray-600 italic cursor-pointer"
-      //             title="Italic"
-      //           >
-      //             I
-      //           </button>
-                
-      //           {!isInlineRichText && (
-      //             <button 
-      //               onClick={(e) => handleFormat('underline', e)}
-      //               className="h-8 w-8 flex items-center justify-center rounded hover:bg-gray-600 underline cursor-pointer"
-      //               title="Underline"
-      //             >
-      //               U
-      //             </button>
-      //           )}
-                    
-      //           <button 
-      //             onClick={(e) => handleFormat('url', e)}
-      //             className="w-8 h-8 flex items-center justify-center rounded hover:bg-gray-600 cursor-pointer"
-      //             title="Insert Link"
-      //           >
-      //             <svg viewBox="0 0 18 18" className="w-5 h-5" fill="none">
-      //               <line className="stroke-white" x1="7" x2="11" y1="7" y2="11"></line>
-      //               <path className="stroke-white" d="M8.9,4.577a3.476,3.476,0,0,1,.36,4.679A3.476,3.476,0,0,1,4.577,8.9C3.185,7.5,2.035,6.4,4.217,4.217S7.5,3.185,8.9,4.577Z"></path>
-      //               <path className="stroke-white" d="M13.423,9.1a3.476,3.476,0,0,0-4.679-.36,3.476,3.476,0,0,0,.36,4.679c1.392,1.392,2.5,2.542,4.679.36S14.815,10.5,13.423,9.1Z"></path>
-      //             </svg>
-      //           </button>
-
-      //           {!isInlineRichText && (   
-      //             <button 
-      //               onClick={(e) => handleFormat('bullet', e)}
-      //               className="w-8 h-8 flex items-center justify-center rounded hover:bg-gray-600 cursor-pointer"
-      //               title="Bullet List"
-      //             >
-      //               <svg viewBox="0 0 18 18" className="w-4 h-4"> 
-      //                 <line stroke="currentcolor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" x1="6" x2="15" y1="4" y2="4"></line> 
-      //                 <line stroke="currentcolor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" x1="6" x2="15" y1="9" y2="9"></line> 
-      //                 <line stroke="currentcolor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" x1="6" x2="15" y1="14" y2="14"></line> 
-      //                 <line stroke="currentcolor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" x1="3" x2="3" y1="4" y2="4"></line> 
-      //                 <line stroke="currentcolor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" x1="3" x2="3" y1="9" y2="9"></line> 
-      //                 <line stroke="currentcolor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" x1="3" x2="3" y1="14" y2="14"></line> 
-      //               </svg>
-      //             </button>
-      //           )}
-      //         </div>           
-      //       </div>
-
-      //       <div className="p-3 min-h-11">
-      //         <div
-      //           id={`richtext-${index}`}
-      //           contentEditable
-      //           onInput={(e)=> handleFieldChange(index, 'defaultValue', e.target.innerHTML)}
-      //           className="bg-transparent h-full outline-none resize-none"
-      //         />
-      //       </div>
-      //     </div>
-      //     </>
-      //   ) 
-      //   break;
-      // }
-
-
-      case 'rich text':
-      case 'inline richtext': {
-        const isInlineRichText = type === 'inline richtext';
-        
-        const handleFormat = (format, event) => {
-          event.preventDefault();
-          const editor = document.getElementById(`richtext-${index}`);
-          if (!editor) return;
-
-          editor.focus();
-          
-          switch(format) {
-            case 'bold':
-              document.execCommand('bold', false, null);
-              break;
-            case 'italic':
-              document.execCommand('italic', false, null);
-              break;
-            case 'underline':
-              document.execCommand('underline', false, null);
-              break;
-            case 'bullet': {
-              // Check if selection is already in a list
-              const inList = isSelectionInList();
-              
-              if (inList) {
-                // Remove list formatting
-                document.execCommand('insertUnorderedList', false, null);
-              } else {
-                // Apply list formatting
-                document.execCommand('insertUnorderedList', false, null);
-              }
-              break;
-            }
-            case 'url': {
-              const url = prompt('Enter URL:', 'https://');
-              if (url) {
-                document.execCommand('createLink', false, url);
-              }
-              break;
-            }
-            default:
-              break;
-          }
-
-          handleFieldChange(index, 'defaultValue', editor.innerHTML);
-        };
-
-        // Check if current selection is inside a list
-        const isSelectionInList = () => {
-          const selection = window.getSelection();
-          if (!selection.rangeCount) return false;
-          
-          const range = selection.getRangeAt(0);
-          let container = range.commonAncestorContainer;
-          
-          // Traverse up the DOM to find if we're inside a list
-          while (container && container.nodeType !== 1) {
-            container = container.parentNode;
-          }
-          
-          while (container && container !== document) {
-            if (container.tagName === 'UL' || container.tagName === 'OL') {
-              return true;
-            }
-            container = container.parentNode;
-          }
-          return false;
-        };
-
-        // Handle key events in the editor
-        const handleKeyDown = (e) => {
-          if (e.key === 'Enter') {
-            const editor = document.getElementById(`richtext-${index}`);
-            if (!editor) return;
-            
-            // Check if we're currently in a list
-            const inList = isSelectionInList();
-            
-            if (inList) {
-              // If we're at the end of a list item and press Enter,
-              // create a new list item (browser default behavior)
-              // If we're at an empty list item, remove the list formatting
-              const selection = window.getSelection();
-              if (selection.rangeCount) {
-                const range = selection.getRangeAt(0);
-                const container = range.commonAncestorContainer;
-                
-                if (container.nodeName === 'LI' && 
-                    container.textContent === '' && 
-                    !range.collapsed) {
-                  e.preventDefault();
-                  document.execCommand('insertUnorderedList', false, null);
-                }
-              }
-            }
-          }
-        };
-
-        typeSpecificFields = (  
-          <>
-          <div className="bg-stone-700 border-gray-400 border-1 mb-4">
-            <div className="flex flex-wrap items-center p-1 border-b border-gray-400">
-              <div className="flex space-x-0">
-                <button 
-                  onClick={(e) => handleFormat('bold', e)}
-                  className="h-8 w-8 flex items-center justify-center rounded hover:bg-gray-600 font-bold cursor-pointer"
-                  title="Bold"
-                >
-                  B
-                </button>
-                
-                <button 
-                  onClick={(e) => handleFormat('italic', e)}
-                  className="h-8 w-8 flex items-center justify-center rounded hover:bg-gray-600 italic cursor-pointer"
-                  title="Italic"
-                >
-                  I
-                </button>
-                
-                {!isInlineRichText && (
-                  <button 
-                    onClick={(e) => handleFormat('underline', e)}
-                    className="h-8 w-8 flex items-center justify-center rounded hover:bg-gray-600 underline cursor-pointer"
-                    title="Underline"
-                  >
-                    U
-                  </button>
-                )}
-                    
-                <button 
-                  onClick={(e) => handleFormat('url', e)}
-                  className="w-8 h-8 flex items-center justify-center rounded hover:bg-gray-600 cursor-pointer"
-                  title="Insert Link"
-                >
-                  <svg viewBox="0 0 18 18" className="w-5 h-5" fill="none">
-                    <line className="stroke-white" x1="7" x2="11" y1="7" y2="11"></line>
-                    <path className="stroke-white" d="M8.9,4.577a3.476,3.476,0,0,1,.36,4.679A3.476,3.476,0,0,1,4.577,8.9C3.185,7.5,2.035,6.4,4.217,4.217S7.5,3.185,8.9,4.577Z"></path>
-                    <path className="stroke-white" d="M13.423,9.1a3.476,3.476,0,0,0-4.679-.36a3.476,3.476,0,0,0,.36,4.679c1.392,1.392,2.5,2.542,4.679.36S14.815,10.5,13.423,9.1Z"></path>
-                  </svg>
-                </button>
-
-                {!isInlineRichText && (   
-                  <button 
-                    onClick={(e) => handleFormat('bullet', e)}
-                    className="w-8 h-8 flex items-center justify-center rounded hover:bg-gray-600 cursor-pointer"
-                    title="Bullet List"
-                  >
-                    <svg viewBox="0 0 18 18" className="w-4 h-4"> 
-                      <line stroke="currentcolor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" x1="6" x2="15" y1="4" y2="4"></line> 
-                      <line stroke="currentcolor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" x1="6" x2="15" y1="9" y2="9"></line> 
-                      <line stroke="currentcolor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" x1="6" x2="15" y1="14" y2="14"></line> 
-                      <line stroke="currentcolor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" x1="3" x2="3" y1="4" y2="4"></line> 
-                      <line stroke="currentcolor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" x1="3" x2="3" y1="9" y2="9"></line> 
-                      <line stroke="currentcolor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" x1="3" x2="3" y1="14" y2="14"></line> 
-                    </svg>
-                  </button>
-                )}
-              </div>           
-            </div>
-
-            <div className="p-3 min-h-11" >
-              <div
-                id={`richtext-${index}`}
-                contentEditable
-                onInput={(e)=> handleFieldChange(index, 'defaultValue', e.target.innerHTML)}
-                onKeyDown={handleKeyDown}
-                className="bg-transparent h-full outline-none resize-none"
-              />
-            </div>
-          </div>
-          </>
-        ) 
-        break;
-      }
-
-      case 'html':
+       case 'html':
         typeSpecificFields = (
           <div className="mb-4">
             <label>Placeholder</label>
@@ -974,104 +627,6 @@ const handleDelete = (index, isNested = false, parentIndex = null) => {
         );
         break;
       }
-      
-      // case 'select':
-      // case 'radio': {
-      //   const options = values.options || [{ label: '', value: '', ...(type !== 'radio' && { group: '' }) }];
-    
-      //   typeSpecificFields = (
-      //     <>
-      //       <div className="mb-4 border-1 border-white px-2">
-      //         <h2 className="font-semibold text-lg my-2">Options</h2>
-              
-      //         {options.map((option, optionIndex) => (
-      //           <div key={optionIndex} className="flex gap-5 border-t-1 border-t-white py-2">
-      //             <div className="flex-1">
-      //               <label>Label</label>
-      //               <input 
-      //                 placeholder="Enter Label"
-      //                 type="text" 
-      //                 value={option.label || ''}
-      //                 onChange={(e) => handleOptionChange(index, optionIndex, 'label', e.target.value)}
-      //                 className="bg-stone-700 h-12 p-3 w-full" 
-      //               />   
-      //               <label>Value</label>
-      //               <input 
-      //                 placeholder="Enter Value"
-      //                 type="text" 
-      //                 value={option.value || ''}
-      //                 onChange={(e) => handleOptionChange(index, optionIndex, 'value', e.target.value)}
-      //                 className="bg-stone-700 h-12 p-3 w-full" 
-      //               />  
-      //               {type !== 'radio' && (
-      //                 <>
-      //                   <label>Group</label>
-      //                   <input 
-      //                     placeholder="Enter Group"
-      //                     type="text" 
-      //                     value={option.group || ''}
-      //                     onChange={(e) => handleOptionChange(index, optionIndex, 'group', e.target.value)}
-      //                     className="bg-stone-700 h-12 p-3 w-full" 
-      //                   />
-      //                 </>
-      //               )}
-      //             </div>
-      //             <div className="flex items-center justify-center px-4">
-      //               <button 
-      //                 onClick={(e) => {
-      //                           e.preventDefault();
-      //                           e.stopPropagation();
-      //                           removeOption(index, optionIndex)}}
-      //                 className="text-gray-600 p-[8px] rounded-full bg-stone-700 bg-opacity-[0.08] cursor-pointer"
-      //                 disabled={options.length < 1}
-      //               >
-      //                 <svg stroke="currentColor" fill="currentColor" strokeWidth="0" viewBox="0 0 24 24" className="text-white" height="24" width="24" xmlns="http://www.w3.org/2000/svg">
-      //                   <path fill="none" d="M0 0h24v24H0z"></path>
-      //                   <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"></path>
-      //                 </svg>
-      //               </button>
-      //             </div>
-      //           </div>
-      //         ))}  
-      //       </div>
-
-      //       <button 
-      //         onClick={(e) => {
-      //           e.preventDefault();
-      //           e.stopPropagation();
-      //           addOption(index)}}
-      //         className="flex w-full py-2 text-lg justify-center items-center border-1 border-dotted border-white cursor-pointer mb-4"
-      //       >
-      //         + Add Option
-      //       </button>
-            
-      //       <div className="my-4">
-      //         <label>Default</label>
-      //         <Menu as="div" className="relative flex bg-stone-700 h-12 p-3 cursor-pointer">
-      //           <MenuButton className="flex justify-between items-center w-full text-white focus:outline-none focus:ring-0">
-      //             {values.defaultValue || "Select default value"}
-      //             <ChevronDownIcon aria-hidden="true" className="-mr-1 size-6 text-white ml-2" />
-      //           </MenuButton>
-      //           <MenuItems className="absolute w-full top-13 left-0 z-10 rounded bg-stone-700 text-white focus:outline-none focus:ring-0">
-      //             <div>
-      //               {[""].map((item) => (
-      //                 <MenuItem key={item}>
-      //                   <li
-      //                     onClick={() => handleFieldChange(index, 'defaultValue', item)}
-      //                     className="block px-4 py-2 cursor-pointer hover:bg-white hover:text-stone-700"
-      //                   >
-      //                     {item}
-      //                   </li>
-      //                 </MenuItem>
-      //               ))}
-      //             </div>
-      //           </MenuItems>
-      //         </Menu>
-      //       </div>
-      //     </>
-      //   );
-      //   break;
-      // }
 
      case 'select':
      case 'radio': {
@@ -1122,7 +677,7 @@ const handleDelete = (index, isNested = false, parentIndex = null) => {
                   removeOption(index, optionIndex);
                 }}
                 className="text-gray-600 p-[8px] rounded-full bg-stone-700 bg-opacity-[0.08] cursor-pointer"
-                disabled={options.length <= 1}
+              // disabled={options.length <= 1}
               >
                 <svg stroke="currentColor" fill="currentColor" strokeWidth="0" viewBox="0 0 24 24" className="text-white" height="24" width="24" xmlns="http://www.w3.org/2000/svg">
                   <path fill="none" d="M0 0h24v24H0z"></path>
@@ -1149,21 +704,27 @@ const handleDelete = (index, isNested = false, parentIndex = null) => {
         <label>Default</label>
         <Menu as="div" className="relative flex bg-stone-700 h-12 p-3 cursor-pointer">
           <MenuButton className="flex justify-between items-center w-full text-white focus:outline-none focus:ring-0">
-            {values.defaultValue || "Select default value"}
+            {values.defaultValue || <span className="text-neutral-400">Select Default Value</span>}
             <ChevronDownIcon aria-hidden="true" className="-mr-1 size-6 text-white ml-2" />
           </MenuButton>
           <MenuItems className="absolute w-full top-13 left-0 z-10 rounded bg-stone-700 text-white focus:outline-none focus:ring-0">
-            <div>
-              {options.map((option) => (
-                <MenuItem key={option.label}>
-                  <li
-                    onClick={() => handleFieldChange(index, 'defaultValue', option.label)}
-                    className="block px-4 py-2 cursor-pointer hover:bg-white hover:text-stone-700"
-                  >
-                    {option.label}
-                  </li>
+            <div>       
+             {options.length === 0 ? (
+                <MenuItem>
+                  <div className="block px-4 py-2 cursor-pointer hover:bg-white hover:text-stone-700">
+                     <span className="text-neutral-400 flex justify-center">No Options</span>
+                  </div>
                 </MenuItem>
-              ))}
+              ) : (
+              options.map((option, idx) => (
+                <MenuItem key={idx}>
+                  <div onClick={() => handleFieldChange(index, 'defaultValue', option.label)}
+                      className="block px-4 py-2 cursor-pointer hover:bg-white hover:text-stone-700" 
+                  >{option.label}
+                  </div>
+                </MenuItem>
+              ))
+              )}
             </div>
           </MenuItems>
         </Menu>
@@ -1236,43 +797,41 @@ const handleDelete = (index, isNested = false, parentIndex = null) => {
         );
         break;
 
-      case 'color':
-        typeSpecificFields = (
-          <>
-            <div className="mb-4 flex gap-4 w-full relative">
-              <div 
-                style={{ backgroundColor: values.colorPalette || '#ffffff' }}
-                className="w-12 h-12 cursor-pointer rounded border border-gray-300 z-0" 
-                onClick={() => toggleColorPicker(index, 'colorPalette')}
-              ></div>
-              <input 
-                type="text" 
-                value={values.colorPalette || '#ffffff'}
-                onChange={(e) => handleFieldChange(index, 'colorPalette', e.target.value)}
-                className="bg-stone-700 h-12 p-3 w-full text-white" 
-              />
-              {colorPalette === `${index}-colorPalette` && (
-               <div className="absolute top-full left-0 mt-2 text-black z-50">       
-                  <SketchPicker 
-                    color={values.colorPalette || '#ffffff'} 
-                    onChangeComplete={(color) => {
-                      handleFieldChange(index, 'colorPalette', color.hex);
-                      setColorPalette(null);
-                    }}
-                    presetColors={[
-                      '#D0021B', '#F5A623', '#F8E71C', '#8B572A',
-                      '#7ED321', '#417505', '#BD10E0', '#9013FE',
-                      '#4A90E2', '#50E3C2', '#B8E986', '#000000',
-                      '#4A4A4A', '#9B9B9B', '#FFFFFF'
-                    ]} 
-                  />
-                </div>
-              )}
-              </div>         
-          </>
-        );
-        break;
-
+     case 'color':
+       typeSpecificFields = (
+         <>
+          <div className="mb-4 flex gap-4 w-full relative">
+            <div style={{ backgroundColor: values.colorPalette || '#ffffff' }}
+              className="w-12 h-12 cursor-pointer rounded border border-gray-300" 
+              onClick={() => toggleColorPicker(index, 'colorPalette')}
+            ></div>
+            <input type="text" value={values.colorPalette || '#ffffff'}
+              onChange={(e) => handleFieldChange(index, 'colorPalette', e.target.value)}
+              className="bg-stone-700 h-12 p-3 w-full text-white" 
+            />
+            {colorPalette === `${index}-colorPalette` && (
+        
+              <div className="absolute z-[9999] text-black" style={{ top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }}>       
+                <SketchPicker  width={294} className="text-center font-semibold text-md"
+                  color={values.colorPalette || '#ffffff'}
+                  onChangeComplete={(color) => {
+                    handleFieldChange(index, 'colorPalette', color.hex);
+                    setColorPalette(null);
+                  }}
+                  presetColors={[
+                   '#D0021B', '#F5A623', '#F8E71C', '#8B572A', '#7ED321', 
+                   '#417505', '#BD10E0', '#9013FE', '#4A90E2', '#50E3C2', 
+                   '#B8E986', '#000000', '#4A4A4A', '#9B9B9B', '#FFFFFF',
+                  '#C0C0C0', '#000080', '#0000FF', '#808000', '#008080'
+                  ]} 
+                />
+              </div>
+           )}
+         </div>         
+        </>
+       );
+      break;
+  
         case 'color background':
         typeSpecificFields = (
           <>
@@ -1288,9 +847,10 @@ const handleDelete = (index, isNested = false, parentIndex = null) => {
                 onChange={(e) => handleFieldChange(index, 'colorRgba', e.target.value)}
                 className="bg-stone-700 h-12 p-3 w-full text-white" 
               />
-              {colorRgba === `${index}-colorRgba` && (
-                <div className="absolute top-full left-0 mt-2 text-black">
-                  <SketchPicker 
+              {colorRgba === `${index}-colorRgba` && ( 
+
+                 <div className="absolute z-[9999] text-black" style={{ top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }}> 
+                  <SketchPicker width={294} className="text-center font-semibold text-md"
                     color={values.colorRgba || 'rgba(255,255,255,1)'}
                     onChangeComplete={(color) => {
                       const rgba = `rgba(${color.rgb.r}, ${color.rgb.g}, ${color.rgb.b}, ${color.rgb.a})`;
@@ -1298,10 +858,10 @@ const handleDelete = (index, isNested = false, parentIndex = null) => {
                       setColorRgba(null);
                     }}
                     presetColors={[
-                      '#D0021B', '#F5A623', '#F8E71C', '#8B572A',
-                      '#7ED321', '#417505', '#BD10E0', '#9013FE',
-                      '#4A90E2', '#50E3C2', '#B8E986', '#000000',
-                      '#4A4A4A', '#9B9B9B', '#FFFFFF'
+                      '#D0021B', '#F5A623', '#F8E71C', '#8B572A', '#7ED321', 
+                      '#417505', '#BD10E0', '#9013FE', '#4A90E2', '#50E3C2', 
+                      '#B8E986', '#000000', '#4A4A4A', '#9B9B9B', '#FFFFFF',
+                      '#C0C0C0', '#000080', '#0000FF', '#808000', '#008080'
                     ]} 
                   />
                 </div>
@@ -1383,12 +943,209 @@ const handleDelete = (index, isNested = false, parentIndex = null) => {
           </>
         );
         break;  
-      
+        
+      case 'rich text':
+      case 'inline richtext': {
+        const isInlineRichText = type === 'inline richtext';
+        
+        const handleFormat = (format, event) => {
+          event.preventDefault();
+          const editor = document.getElementById(`richtext-${index}`);
+          if (!editor) return;
+          editor.focus();
+          switch (format) {
+          case 'bold':
+            document.execCommand('bold', false, null);
+            break;
+          case 'italic':
+            document.execCommand('italic', false, null);
+            break;
+          case 'underline':
+            document.execCommand('underline', false, null);
+            break;
+
+          case 'bullet': {
+            const selection = window.getSelection();
+            if (!selection.rangeCount) return;
+            const range = selection.getRangeAt(0);
+            // Insert a marker span to remember cursor position
+            const marker = document.createElement('span');
+            marker.id = 'cursor-marker';
+            marker.appendChild(document.createTextNode('\u200B')); // zero-width space
+            range.insertNode(marker);
+            editor.focus();
+            document.execCommand('insertUnorderedList', false, null);
+            // Restore cursor to marker position and remove marker
+            setTimeout(() => {
+              const markerEl = document.getElementById('cursor-marker');
+              if (markerEl) {
+                const newRange = document.createRange();
+                newRange.setStartAfter(markerEl);
+                newRange.collapse(true);
+                selection.removeAllRanges();
+                selection.addRange(newRange);
+                markerEl.parentNode.removeChild(markerEl);
+              }
+              // Optional: style the list
+              const lists = editor.getElementsByTagName('ul');
+              if (lists.length > 0) {
+                const lastList = lists[lists.length - 1];
+                lastList.style.listStyleType = 'disc';
+                lastList.style.paddingLeft = '40px';
+                lastList.style.margin = '0';
+
+                const listItems = lastList.getElementsByTagName('li');
+                for (let li of listItems) {
+                  li.style.margin = '2px 0';
+                  li.style.display = 'list-item'; 
+                }
+              }
+              handleFieldChange(index, 'defaultValue', editor.innerHTML);
+            }, 0);
+            break;
+          }
+          case 'url': {
+            const url = prompt('Enter URL:', 'https://');
+            if (url) {
+              document.execCommand('createLink', true, url);
+            }
+            break;
+          }
+          default:
+          break;
+          } 
+          handleFieldChange(index, 'defaultValue', editor.innerHTML);
+        };
+        const handleKeyDown = (e) => {
+          const editor = e.currentTarget;
+          if (e.key === 'Enter') {
+            const selection = window.getSelection();
+            if (!selection.rangeCount) return;
+
+            const range = selection.getRangeAt(0);
+            let node = range.commonAncestorContainer;
+            let listItem = null;
+            while (node && node !== editor) {
+              if (node.nodeName === 'LI') {
+              listItem = node;
+              break;
+              }
+              node = node.parentNode;
+            }
+            if (listItem) {
+              const textContent = listItem.textContent.trim();
+              if (textContent === '' && listItem.innerHTML !== '<br>') {
+                e.preventDefault();
+                const list = listItem.parentNode;
+                const newDiv = document.createElement('div');
+                newDiv.innerHTML = '<br>';
+                if (listItem === list.lastChild && list.children.length === 1) {
+                  list.parentNode.replaceChild(newDiv, list);
+                } else {
+                  list.removeChild(listItem);
+                  if (list.children.length === 0) {
+                    list.parentNode.removeChild(list);
+                  }
+                  list.parentNode.insertBefore(newDiv, list.nextSibling);
+                }
+                const newRange = document.createRange();
+                newRange.setStart(newDiv, 0);
+                newRange.collapse(true);
+                selection.removeAllRanges();
+                selection.addRange(newRange);
+                handleFieldChange(index, 'defaultValue', editor.innerHTML);
+                return;
+              }
+            }
+            setTimeout(() => {
+              handleFieldChange(index, 'defaultValue', editor.innerHTML);
+            }, 0);
+          }
+        };
+        const initializeEditor = (editorElement) => {
+          if (!editorElement.innerHTML.trim()) {
+            editorElement.innerHTML = '<div><br></div>';
+          }
+        };
+        typeSpecificFields = (
+        <>
+        <div className="bg-stone-700 border-gray-400 border-1 mb-4">
+          <div className="flex flex-wrap items-center p-1 border-b border-gray-400">
+            <div className="flex space-x-0">
+              <button
+                onClick={(e) => handleFormat('bold', e)}
+                className="h-8 w-8 flex items-center justify-center rounded hover:bg-gray-600 font-bold cursor-pointer"
+                title="Bold"
+              >
+              B
+              </button>
+
+              <button
+               onClick={(e) => handleFormat('italic', e)}
+               className="h-8 w-8 flex items-center justify-center rounded hover:bg-gray-600 italic cursor-pointer"
+               title="Italic"
+              >
+              I
+              </button>
+
+             {!isInlineRichText && (
+              <button
+                onClick={(e) => handleFormat('underline', e)}
+                className="h-8 w-8 flex items-center justify-center rounded hover:bg-gray-600 underline cursor-pointer"
+                title="Underline"
+              >
+                U
+              </button>
+             )}
+              <button
+                onClick={(e) => handleFormat('url', e)}
+                className="w-8 h-8 flex items-center justify-center rounded hover:bg-gray-600 cursor-pointer"
+                title="Insert Link"
+              >
+               <svg viewBox="0 0 18 18" className="w-5 h-5" fill="none">
+                <line className="stroke-white" x1="7" x2="11" y1="7" y2="11"></line>
+                <path className="stroke-white" d="M8.9,4.577a3.476,3.476,0,0,1,.36,4.679A3.476,3.476,0,0,1,4.577,8.9C3.185,7.5,2.035,6.4,4.217,4.217S7.5,3.185,8.9,4.577Z"></path>
+                <path className="stroke-white" d="M13.423,9.1a3.476,3.476,0,0,0-4.679-.36,3.476,3.476,0,0,0,.36,4.679c1.392,1.392,2.5,2.542,4.679.36S14.815,10.5,13.423,9.1Z"></path>
+               </svg>
+              </button>
+             {!isInlineRichText && (
+              <button
+                onClick={(e) => handleFormat('bullet', e)}
+                className="w-8 h-8 flex items-center justify-center rounded hover:bg-gray-600 cursor-pointer"
+                title="Bullet List"
+              >
+                <svg viewBox="0 0 18 18" className="w-4 h-4">
+                  <line stroke="currentcolor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" x1="6" x2="15" y1="4" y2="4"></line>
+                  <line stroke="currentcolor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" x1="6" x2="15" y1="9" y2="9"></line>
+                  <line stroke="currentcolor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" x1="6" x2="15" y1="14" y2="14"></line>
+                  <line stroke="currentcolor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" x1="3" x2="3" y1="4" y2="4"></line>
+                  <line stroke="currentcolor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" x1="3" x2="3" y1="9" y2="9"></line>
+                  <line stroke="currentcolor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" x1="3" x2="3" y1="14" y2="14"></line>
+                </svg>
+              </button>
+             )}
+            </div>
+          </div>
+          <div className="p-3 min-h-11">
+            <div
+              id={`richtext-${index}`}
+              contentEditable
+              onInput={(e) => handleFieldChange(index, 'defaultValue', e.target.innerHTML)}
+              onKeyDown={handleKeyDown}
+              onFocus={(e) => initializeEditor(e.target)}
+              className="bg-transparent h-full outline-none resize-none richtext-editor"
+            />
+          </div>
+        </div>
+       </>
+       );
+       break;
+      }  
+
       case 'block':
       default:
         break;
     }
-
     return (
       <>
         {commonFields}
@@ -1432,26 +1189,23 @@ const handleDelete = (index, isNested = false, parentIndex = null) => {
       </>
     );
   };
-
   const renderElement = (element, index, isNested = false, parentIndex = null) => {
     const isExpanded = isNested 
       ? expandedNested[parentIndex]?.[index] 
-      : elementsOpen[index];
-    
+      : elementsOpen[index]; 
     // Get current values for dynamic title
     const currentValues = fieldValues[isNested ? `${parentIndex}-${index}` : index] || {};
     const displayTitle = element.title.toLowerCase() === 'block' 
       ? currentValues.name
       : currentValues.label
-
     return (
       <div key={isNested ? `${parentIndex}-${index}` : index} className="basis-6/12 w-full overflow-hidden">
         <div className="bg-stone-800 py-1 px-4 flex items-center group">
           <div className="bg-stone-900 p-1 rounded-sm mr-3">
             <span className="text-light-bg text-2xl">{element.icon}</span>
           </div>
-          <div className="flex-1 ms-2">
-            <h4 className="font-semibold text-lg">{displayTitle}</h4>
+          <div className="flex-1 ms-2 ">
+            <h4 className="font-semibold text-lg ">{displayTitle}</h4>
           </div>
           <div className="flex justify-between space-x-5 items-center">
             <h4 className="font-semibold text-lg">{element.title}</h4>
@@ -1482,8 +1236,7 @@ const handleDelete = (index, isNested = false, parentIndex = null) => {
               </svg>
             </button>
           </div>
-        </div>
-        
+        </div>        
         {isExpanded && (
           <div className="w-full bg-stone-950 py-6 px-4">
             {renderInputFields(element, isNested ? `${parentIndex}-${index}` : index)}
@@ -1491,8 +1244,7 @@ const handleDelete = (index, isNested = false, parentIndex = null) => {
         )}
       </div>
     );
-  };
-  
+  }; 
   return (
     <div className="bg-stone-700 basis-6/12 rounded-lg w-full overflow-hidden"
       onDragOver={handleDragOver}
@@ -1509,5 +1261,4 @@ const handleDelete = (index, isNested = false, parentIndex = null) => {
     </div>
   );
 };
-
-export default SectionSchemaElements;
+export default SectionSchemaElements

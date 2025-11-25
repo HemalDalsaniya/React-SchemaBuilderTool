@@ -50,7 +50,7 @@ const Settings = ({ resetTrigger, settingsData, setSettingsData }) => {
     setSelectedTemplates(selectedTemplates.filter((i) => i !== item))
   }
   
-const handleSelectedGroup = (item) => {
+  const handleSelectedGroup = (item) => {
     if (selectedGroup.includes(item)) {
       setSelectedGroup(selectedGroup.filter((i) => i !== item))
     } else {
@@ -65,7 +65,6 @@ const handleSelectedGroup = (item) => {
   return (
     <div className="p-3 overflow-y-scroll max-h-[650px]" style={{ scrollbarWidth: "none" }}>
 
-     {/* {!settings &&  */}
       <div className="space-y-4">
       <label>Name <span className="text-red-500">*</span></label>
       <input type="text"
@@ -76,20 +75,19 @@ const handleSelectedGroup = (item) => {
       <label>Class <span className="text-red-500">*</span></label>
       <input type="text"
         className="bg-stone-700 h-12 p-3 w-full rounded required" 
-        value={sectionClass}
+        value={sectionClass} placeholder="Enter Class Name"
         onChange={(e) => setSectionClass(e.target.value)}/>
       
       <label>Max Blocks <span className="text-red-500">*</span></label>
-      <input type="number" 
-        min="0"
+      <input type="number" min="0" 
         className="bg-stone-700 h-12 p-3 w-full rounded required"  
-        value={maxBlocks}
+        value={maxBlocks} placeholder="Enter Max Blocks"
         onChange={(e) => setMaxBlocks(e.target.value)}/>
       
       <label>Tag</label>
       <Menu as="div" className="relative flex bg-stone-700 h-12 p-3 rounded cursor-pointer">
         <MenuButton className="flex justify-between items-center w-full text-white focus:outline-none focus:ring-0">
-          {selectedTag || "Select Tag"}
+          {selectedTag || <span className="text-neutral-400">Select Tag</span>}
           <ChevronDownIcon aria-hidden="true" className="-mr-1 size-6 text-white ml-2" />
         </MenuButton>
         <MenuItems className="absolute w-full top-13 left-0 z-10 rounded bg-stone-700 text-white focus:outline-none focus:ring-0">
@@ -109,7 +107,7 @@ const handleSelectedGroup = (item) => {
       <Menu as="div" className="relative bg-stone-700 min-h-12 p-3 rounded cursor-pointer">
         <MenuButton className="flex flex-wrap items-center w-full gap-2 text-white focus:outline-none focus:ring-0">
           {selectedTemplates.length === 0 ? (
-            "Select Template"
+            <span className="text-neutral-400">Select Template</span>
           ) : (
             selectedTemplates.map((item) => (
               <span key={item}
@@ -153,7 +151,7 @@ const handleSelectedGroup = (item) => {
       <Menu as="div" className="relative bg-stone-700 min-h-12 p-3 rounded cursor-pointer">
         <MenuButton className="flex flex-wrap items-center w-full gap-2 text-white focus:outline-none focus:ring-0">
           {selectedGroup.length === 0 ? (
-            "Enter the Disable Group Value"
+            <span className="text-neutral-400">Enter the Disable Group Value</span>
           ) : (
             selectedGroup.map((item) => (
               <span key={item}
@@ -184,13 +182,7 @@ const handleSelectedGroup = (item) => {
         </MenuItems>
       </Menu>
       </div> 
-      {/* }
-
-      {settings &&
-        <div>
-          hnyytyjjt 
-        </div>} */}
-
+    
     </div>
   )
 }

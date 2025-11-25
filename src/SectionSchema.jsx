@@ -39,7 +39,7 @@ const SectionSchema = ({ onReset, resetTrigger, settingsData, elementsData }) =>
 
   useEffect(() => {
     if (copy || reset) {
-      const timer = setTimeout(() => {setCopy(false), setReset(false)}, 2000 );
+      const timer = setTimeout(() => {setCopy(false), setReset(false)}, 3000 );
       return () => clearTimeout(timer);
     }
   }, [copy, reset]);
@@ -50,7 +50,9 @@ const SectionSchema = ({ onReset, resetTrigger, settingsData, elementsData }) =>
         <div className="bg-stone-700 h-12 font-semibold text-center text-lg py-2 px-4">Section Schema</div>
         <div className="flex-wrap">
           <div className="space-y-1 p-2 overflow-y-scroll max-h-[650px]" style={{ scrollbarWidth: "none" }}>
-            <div ref={schemaRef}><Schema key={resetTrigger} settingsData={settingsData} elementsData={elementsData}/></div>
+            <div ref={schemaRef} className="break-words">
+              <Schema key={resetTrigger} settingsData={settingsData} elementsData={elementsData}/>
+            </div>
           </div>
           <div className="absolute flex w-full h-16 bg-stone-700 justify-between bottom-0">
             <div className="flex h-16 p-2 justify-between">
@@ -85,14 +87,29 @@ const SectionSchema = ({ onReset, resetTrigger, settingsData, elementsData }) =>
           </div>
         </div>
       </div>
+
       {copy && (
-        <div id="toast-success" className="flex absolute bottom-0 right-5 h-14 w-full justify-center items-center max-w-xs p-4 mb-4 text-gray-500 bg-white shadow-sm rounded" role="alert">
+        <div id="toast-success" className="flex absolute bottom-12 right-[42%] h-22 w-full justify-center items-center max-w-xs p-4 mb-4 text-gray-500 bg-white shadow-sm rounded" role="alert">
+          <div className="absolute bottom-0 left-0 w-full h-1 bg-gray-200 rounded-b">
+            <div className="h-full bg-green-500 rounded-b"
+              style={{ width: '100%', animation: 'width 3s linear forwards', animationName: 'progressAnimation'}}>
+            </div>     
+            {/* Inline styles for the animation */}
+            <style>
+            {`
+              @keyframes progressAnimation {
+               0% { width: 100%; }
+               100% { width: 0%; }
+              }
+            `}
+            </style>
+          </div> 
           <div className="inline-flex items-center justify-center shrink-0 w-8 h-8 text-green-500 bg-green-100 rounded-lg">
             <svg className="w-5 h-5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
               <path d="M10 .5a9.5 9.5 0 1 0 9.5 9.5A9.51 9.51 0 0 0 10 .5Zm3.707 8.207-4 4a1 1 0 0 1-1.414 0l-2-2a1 1 0 0 1 1.414-1.414L9 10.586l3.293-3.293a1 1 0 0 1 1.414 1.414Z"/>
             </svg><span className="sr-only">Check icon</span>
           </div>
-          <div className="ms-3 text-sm font-normal">Schema copied to clipboard successfully!</div>
+          <div className="ms-3 text-md font-normal">Schema copied to clipboard successfully!</div>
           <button 
             onClick={() => setCopy(false)}
             type="button" 
@@ -104,14 +121,33 @@ const SectionSchema = ({ onReset, resetTrigger, settingsData, elementsData }) =>
           </button>
         </div>
       )}
+
       {reset && (
-        <div id="toast-reset" className="flex absolute bottom-0 right-5 h-14 w-full justify-center items-center max-w-xs p-4 mb-4 text-gray-500 bg-white shadow-sm rounded" role="alert">
+        <div id="toast-reset" className="flex absolute bottom-12 right-[42%] h-22 w-full justify-center items-center max-w-xs p-4 mb-4 text-gray-500 bg-white shadow-sm rounded" role="alert">
+          <div className="absolute bottom-0 left-0 w-full h-1 bg-gray-200 rounded-b">
+            <div className="h-full bg-green-500 rounded-b"
+              style={{ width: '100%', animation: 'width 3s linear forwards', animationName: 'progressAnimation'}}>
+            </div>     
+            {/* Inline styles for the animation */}
+            <style>
+            {`
+              @keyframes progressAnimation {
+               0% { width: 100%; }
+               100% { width: 0%; }
+              }
+            `}
+            </style>
+          </div>     
           <div className="inline-flex items-center justify-center shrink-0 w-8 h-8 text-green-500 bg-green-100 rounded-lg">
-            <svg className="w-5 h-5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
+            {/* <svg className="w-5 h-5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
               <path d="M10 .5a9.5 9.5 0 1 0 9.5 9.5A9.51 9.51 0 0 0 10 .5Zm3.707 8.207-4 4a1 1 0 0 1-1.414 0l-2-2a1 1 0 0 1 1.414-1.414L9 10.586l3.293-3.293a1 1 0 0 1 1.414 1.414Z"/>
-            </svg><span className="sr-only">Check icon</span>
+            </svg> */}
+            <svg class="w-5 h-5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 18 20">
+                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 1v5h-5M2 19v-5h5m10-4a8 8 0 0 1-14.947 3.97M1 10a8 8 0 0 1 14.947-3.97"/>
+            </svg>
+            <span className="sr-only">Reset icon</span> 
           </div>
-          <div className="ms-3 text-sm font-normal">Schema has been reset successfully!</div>
+          <div className="ms-3 text-md font-normal">Schema has been reset successfully!</div>
           <button onClick={() => setReset(false)}
             type="button" 
             className="ms-auto -mx-1.5 -my-1.5 bg-white text-gray-400 hover:text-gray-900 rounded-lg focus:ring-2 focus:ring-gray-300 p-1.5 hover:bg-gray-100 inline-flex items-center justify-center h-8 w-8" 

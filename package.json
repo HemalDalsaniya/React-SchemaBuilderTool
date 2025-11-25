@@ -17,6 +17,7 @@
     "react-color": "^2.19.3",
     "react-dom": "^19.1.0",
     "react-tiny-popover": "^8.1.6",
+    "react-tooltip": "^5.30.0",
     "tailwindcss": "^4.1.11"
   },
   "devDependencies": {

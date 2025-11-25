@@ -1,32 +1,3 @@
-// import Header from './Header'
-// import Container from './Container'
-// import ColorContainer from './ColorContainer'
-// import Footer from './Footer'
-
-// const SchemaBuilderTool = () => {
-  
-//   return (  
-//     <>
-//     <div className="bg-black h-screen px-5 overflow-hidden">
-      
-//       <Header/>
-
-//       <Container/>
-
-//       <Footer/>
-
-//     </div>
-//     </>
-//   )
-// }
-
-// export default SchemaBuilderTool
-
-
-//*****************************************************TEST CODE FOR COLOR SCHEMA******************************************** */
-//***************************************************************************************************************************
-
-
 import Header from './Header'
 import Container from './Container'
 import ColorContainer from './ColorContainer'

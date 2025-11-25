@@ -1,4 +1,5 @@
 import ColorElementsList from "./ColorElementsList"
+import { Tooltip } from 'react-tooltip';
 const ColorElements = () => {  
        const handleDragStart = (e, element) => {
           const dragData = {
@@ -22,8 +23,16 @@ const ColorElements = () => {
               {filtered.map((el, index) => (
                 <div key={index} className="bg-stone-700 h-10 px-3 py-10 w-full flex items-center space-x-2 cursor-grab"
                      draggable 
+                     data-tooltip-id="element-tooltip"
+                     data-tooltip-html={`
+                       <div>
+                         <img class="rounded" src=${el.tooltipImage} height=${el.height} width=${el.width}/>     
+                       </div>
+                     `}
+            data-tooltip-place="right"
                      onDragStart={(e) => handleDragStart(e, el)}
                      onDragEnd={handleDragEnd} >
+
                   <div className="bg-stone-900 p-1 rounded-sm">
                     <span className="text-2xl text-white">
                       {el.icon}
@@ -34,7 +43,10 @@ const ColorElements = () => {
                     <p className="text-sm">{el.description}</p>
                   </div>
                 </div>
-              ))}     
+              ))}   
+
+              <Tooltip id="element-tooltip" style={{ backgroundColor: '#bfdbfe', padding:'10px'}} />
+
             </div>
     </>
   )

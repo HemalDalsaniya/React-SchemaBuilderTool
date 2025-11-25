@@ -78,26 +78,27 @@ const SchemaColor = ({ colorSettingsData, colorElementsData }) => {
     
     // Generate main schema
     const schema = {
-      name: safeColorSettingsData.colorSchemaName || "Color Scheme Group",
+      name: safeColorSettingsData.colorSchemaName ==="" ? "" : safeColorSettingsData.colorSchemaName || "Color Scheme Group",
       settings: [
         {
           type: "color_scheme_group",
-          id: safeColorSettingsData.colorSchemeId || "color_scheme",
+          id: safeColorSettingsData.colorSchemeId === "" ? "" : safeColorSettingsData.colorSchemeId|| "color_scheme",
           definition: definition,
           role: {
             background: {
-              solid: safeColorSettingsData.backgroundSolid || "",
-              gradient: safeColorSettingsData.backgroundGradient || "",
+              solid: safeColorSettingsData.backgroundSolid !=="None" ? safeColorSettingsData.backgroundSolid : "",
+              gradient: safeColorSettingsData.backgroundGradient !=="None" ? safeColorSettingsData.backgroundGradient : "",
+              // gradient: safeColorSettingsData.backgroundGradient || "",
             },
-            text: safeColorSettingsData.textColor || "",
-            primary_button: safeColorSettingsData.primaryButton || "",
-            on_primary_button: safeColorSettingsData.onPrimaryButton || "",
-            primary_button_border: safeColorSettingsData.primaryButtonBorder || "",
-            secondary_button: safeColorSettingsData.secondaryButton || "",
-            on_secondary_button: safeColorSettingsData.onSecondaryButton || "",
-            secondary_button_border: safeColorSettingsData.secondaryButtonBorder || "",
-            icons: safeColorSettingsData.iconsColor || "",
-            links: safeColorSettingsData.linkColor || ""
+            text: safeColorSettingsData.textColor !=="None" ? safeColorSettingsData.textColor : "",
+            primary_button: safeColorSettingsData.primaryButton !== "None" ? safeColorSettingsData.primaryButton : "",
+            on_primary_button: safeColorSettingsData.onPrimaryButton !== "None" ? safeColorSettingsData.onPrimaryButton : "",
+            primary_button_border: safeColorSettingsData.primaryButtonBorder !== "None" ? safeColorSettingsData.primaryButtonBorder : "",
+            secondary_button: safeColorSettingsData.secondaryButton !== "None" ? safeColorSettingsData.secondaryButton : "",
+            on_secondary_button: safeColorSettingsData.onSecondaryButton !== "None" ? safeColorSettingsData.onSecondaryButton : "",
+            secondary_button_border: safeColorSettingsData.secondaryButtonBorder !== "None" ? safeColorSettingsData.secondaryButtonBorder : "",
+            icons: safeColorSettingsData.iconsColor !== "None" ? safeColorSettingsData.iconsColor : "",
+            links: safeColorSettingsData.linkColor !== "None" ? safeColorSettingsData.linkColor : ""
           }
         }
       ]  
@@ -172,4 +173,4 @@ const SchemaColor = ({ colorSettingsData, colorElementsData }) => {
   );
 };
 
-export default SchemaColor;
+export default SchemaColor
