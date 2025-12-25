@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import SectionSchema from './SectionSchema';
 import SectionSchemaElements from './SectionSchemaElements';
 import SectionSchemaGenerator from './SectionSchemaGenerator';
@@ -20,6 +20,8 @@ const Container = ({ schemaType, setSchemaType }) => {
     nestedFields: {},
     fieldValues: {}
   });
+
+  const elementsRef = useRef(null);
 
   const handleDrop = (element) => {
     setDroppedElements([...droppedElements, element]);
@@ -64,14 +66,14 @@ const Container = ({ schemaType, setSchemaType }) => {
           onDelete={handleDelete}
           resetTrigger={resetTrigger}
           elementsData={elementsData}
-          setElementsData={setElementsData}
+          setElementsData={setElementsData}  ref={elementsRef}
         />
 
         <SectionSchema 
           onReset={handleGlobalReset} 
           resetTrigger={resetTrigger}
           settingsData={settingsData}
-          elementsData={elementsData} 
+          elementsData={elementsData}  elementsRef={elementsRef}
         />
     </div>
   );

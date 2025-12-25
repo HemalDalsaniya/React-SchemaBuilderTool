@@ -4,8 +4,8 @@ function App() {
 
   return (
     <>
-    <SchemaProvider>
-      <SchemaBuilderTool/>
+      <SchemaProvider>
+         <SchemaBuilderTool className="overflow-x-hidden max-w-screen"/>
       </SchemaProvider>
     </>
   )

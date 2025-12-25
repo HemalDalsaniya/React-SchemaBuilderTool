@@ -417,4 +417,4 @@ const Schema = ({ settingsData, elementsData }) => {
     </div>
   );
 };
-export default Schema;
+export default Schema
